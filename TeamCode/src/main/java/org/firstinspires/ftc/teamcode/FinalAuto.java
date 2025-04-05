@@ -207,14 +207,13 @@ public class FinalAuto extends LinearOpMode {
         //step 2
         TrajectoryActionBuilder specimen2TrajBack = specimen1Traj.endTrajectory().fresh()
                 .strafeToConstantHeading(new Vector2d(38, -59), baseVelConstraint);
-        //.strafeToConstantHeading(new Vector2d(33, -52), new TranslationalVelConstraint(15));
+
         TrajectoryActionBuilder specimen2TrajHang = specimen2TrajBack.endTrajectory().fresh()
                 .strafeToConstantHeading(new Vector2d(-2.5, -31), baseVelConstraint); // -38
 
         //step 3
         TrajectoryActionBuilder specimen3TrajBack = specimen2TrajHang.endTrajectory().fresh()
                 .strafeToConstantHeading(new Vector2d(38, -59), baseVelConstraint);
-        //.strafeToConstantHeading(new Vector2d(33, -53), new TranslationalVelConstraint(15));
 
         TrajectoryActionBuilder specimen3TrajHang = specimen3TrajBack.endTrajectory().fresh()
                 .strafeToConstantHeading(new Vector2d(-2, -31), baseVelConstraint); // -35
@@ -255,14 +254,6 @@ public class FinalAuto extends LinearOpMode {
         /* Clip Specimen #1 (pre-wall specimen) (repeat 1-5)
             1. close claw (claw should already be opened)
             2. go to hang specimen then come back */
-      /*  SequentialAction w = new SequentialAction(
-                bac.resetRailArm(),
-                bac.closeSpecimenClaw()
-        );*/
-        SequentialAction w = new SequentialAction(
-                bac.rrTest()
-        );
-
 
         SequentialAction hangSpecimen1 = new SequentialAction(
                 bac.closeSpecimenClaw(),
