@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.roadrunner;
 
 //roadrunner imports
 import androidx.annotation.NonNull;
@@ -19,7 +19,6 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import org.firstinspires.ftc.teamcode.MecanumDrive;
 
 @Autonomous(name = "Spline Auto", group = "Autonomous")
 public class SplineAuto extends LinearOpMode {
