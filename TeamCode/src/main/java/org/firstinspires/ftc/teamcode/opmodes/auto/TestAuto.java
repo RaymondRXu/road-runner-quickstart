@@ -19,11 +19,10 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
 import org.firstinspires.ftc.teamcode.roadrunner.MecanumDrive;
 
-@Autonomous(name = "Spline Auto", group = "Autonomous")
-public class SplineAuto extends LinearOpMode {
+@Autonomous(name = "Test Auto", group = "Autonomous")
+public class TestAuto extends LinearOpMode {
     public class BridgeArmClaw {
         private Servo bridge, sampleClaw, specimenArm, specimenClaw, rail;
         private ElapsedTime timer = new ElapsedTime();
@@ -66,7 +65,6 @@ public class SplineAuto extends LinearOpMode {
                     timer.reset();
                     specimenArm.setPosition(0);//set to reset value (back)
                     rail.setPosition(0.5); //set to reset value (down)
-
                     isReset = true;
                 }
 
@@ -75,7 +73,6 @@ public class SplineAuto extends LinearOpMode {
                     isReset = false;
                     return false;//exit after reset
                 }
-
                 return true;
             }
         }//ResetRailArm
@@ -96,6 +93,40 @@ public class SplineAuto extends LinearOpMode {
                 return false;
             }
         }
+
+        public class openSamClaw implements Action {
+            @Override
+            public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+                sampleClaw.setPosition(0);
+                return false;
+            }
+        }
+
+        public class closeSamClaw implements Action {
+            @Override
+            public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+                bridge.setPosition(0.96);
+                sampleClaw.setPosition(0.8);
+                return true;
+            }
+        }
+
+        public class hoverArm implements Action {
+            @Override
+            public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+                bridge.setPosition(0.85);
+                return true;
+            }
+        }
+
+        public class raiseArm implements Action {
+            @Override
+            public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+                bridge.setPosition(0.5);
+                return true;
+            }
+        }
+
 
         public class SleepAction implements Action {
             private final long sleepTimeMillis; // Duration to sleep in milliseconds
@@ -160,6 +191,10 @@ public class SplineAuto extends LinearOpMode {
             return new openClaw();
         }
 
+        public Action openSamClaw() { return new openSamClaw(); }
+
+        public Action closeSamClaw() { return new closeSamClaw(); }
+
         public Action sleep(int a) {
             return new SleepAction(a);
         }
@@ -167,6 +202,10 @@ public class SplineAuto extends LinearOpMode {
         public Action hangSpecimen() {
             return new HangSpecimen();
         }
+
+        public Action hoverArm() { return new hoverArm(); }
+
+        public Action raiseArm() { return new raiseArm(); }
 
         public Action resetRailArm(){
             return new ResetRailArm();
@@ -189,57 +228,54 @@ public class SplineAuto extends LinearOpMode {
         Pose2d initialPose = new Pose2d(25, -62, Math.toRadians(90));
 
         MecanumDrive drive = new MecanumDrive(hardwareMap, initialPose); //initialize drive
-        BridgeArmClaw bac = new BridgeArmClaw(hardwareMap);//initial all servos
+        BridgeArmClaw bac = new BridgeArmClaw(hardwareMap); //initialize all servos
+
+        TrajectoryActionBuilder spec0Traj = drive.actionBuilder(initialPose)
+                 .strafeToConstantHeading(new Vector2d(-3,-31), baseVelConstraint);
+
+        TrajectoryActionBuilder depositSample = spec0Traj.endTrajectory().fresh()
+                .splineToLinearHeading(new Pose2d(25, -62, Math.toRadians(0)), Math.toRadians(0));
 
         //Trajectories
-        TrajectoryActionBuilder pushSamplesTraj = drive.actionBuilder(initialPose)
+        TrajectoryActionBuilder pushSamplesTraj = depositSample.endTrajectory().fresh()
+                .splineToLinearHeading(new Pose2d(44, -10, Math.toRadians(90)), Math.toRadians(90))
                 .strafeToConstantHeading(new Vector2d(48, -10))
                 .strafeToConstantHeading(new Vector2d(48,-46))
-                .strafeToConstantHeading(new Vector2d(48, -10))
-                .strafeToConstantHeading(new Vector2d(56,-13))
+                .splineToConstantHeading(new Vector2d(56,-13), Math.toRadians(0))
                 .strafeToConstantHeading(new Vector2d(56,-46))
-                .strafeToConstantHeading(new Vector2d(56, -13))
-                .strafeToConstantHeading(new Vector2d(61, -13))
-                .strafeToConstantHeading(new Vector2d(61, -46)) //new TranslationalVelConstraint(200))
+                .splineToConstantHeading(new Vector2d(61, -13), Math.toRadians(0))
+                .strafeToConstantHeading(new Vector2d(61, -46))
                 .strafeToConstantHeading(new Vector2d(38, -59));
-        //.splineToConstantHeading(new Vector2d(17, -56), Math.toRadians(240));
         //step 1
         TrajectoryActionBuilder specimen1Traj = pushSamplesTraj.endTrajectory().fresh()
-                .splineToConstantHeading(new Vector2d(-3, -31), Math.toRadians(0), baseVelConstraint);
-        //.strafeToConstantHeading(new Vector2d(-3, -31), baseVelConstraint); // -40
+                .strafeToConstantHeading(new Vector2d(-3, -31), baseVelConstraint); // -40
         //step 2
         TrajectoryActionBuilder specimen2TrajBack = specimen1Traj.endTrajectory().fresh()
                 .strafeToConstantHeading(new Vector2d(38, -59), baseVelConstraint);
-        //.strafeToConstantHeading(new Vector2d(38, -59), baseVelConstraint);
-        //.strafeToConstantHeading(new Vector2d(33, -52), new TranslationalVelConstraint(15));
+
         TrajectoryActionBuilder specimen2TrajHang = specimen2TrajBack.endTrajectory().fresh()
-                .splineToConstantHeading(new Vector2d(-2.5, -31), Math.toRadians(0), baseVelConstraint); // -38
+                .strafeToConstantHeading(new Vector2d(-2.5, -31), baseVelConstraint); // -38
 
         //step 3
         TrajectoryActionBuilder specimen3TrajBack = specimen2TrajHang.endTrajectory().fresh()
                 .strafeToConstantHeading(new Vector2d(38, -59), baseVelConstraint);
-        //.strafeToConstantHeading(new Vector2d(38, -59), baseVelConstraint);
-        //.strafeToConstantHeading(new Vector2d(33, -53), new TranslationalVelConstraint(15));
 
         TrajectoryActionBuilder specimen3TrajHang = specimen3TrajBack.endTrajectory().fresh()
-                .splineToConstantHeading(new Vector2d(-2, -31), Math.toRadians(0), baseVelConstraint); // -35
+                .strafeToConstantHeading(new Vector2d(-2, -31), baseVelConstraint); // -35
 
         //step 4
         TrajectoryActionBuilder specimen4TrajBack = specimen3TrajHang.endTrajectory().fresh()
                 .strafeToConstantHeading(new Vector2d(38, -59), baseVelConstraint);
 
         TrajectoryActionBuilder specimen4TrajHang = specimen4TrajBack.endTrajectory().fresh()
-                .splineToConstantHeading(new Vector2d(-1.5, -31), Math.toRadians(0), baseVelConstraint);
-        //.strafeToConstantHeading(new Vector2d(-1.5, -31), baseVelConstraint); // -33
+                .strafeToConstantHeading(new Vector2d(-1.5, -31), baseVelConstraint); // -33
 
         //step 5
         TrajectoryActionBuilder specimen5TrajBack = specimen4TrajHang.endTrajectory().fresh()
                 .strafeToConstantHeading(new Vector2d(38, -59), baseVelConstraint);
-        //    .strafeToConstantHeading(new Vector2d(33,-54), new TranslationalVelConstraint(15)); //34
 
         TrajectoryActionBuilder specimen5TrajHang = specimen5TrajBack.endTrajectory().fresh()
-                .splineToConstantHeading(new Vector2d(-1, -31), Math.toRadians(0), baseVelConstraint);
-        //.strafeToConstantHeading(new Vector2d(-1, -31), baseVelConstraint); // -31
+                .strafeToConstantHeading(new Vector2d(-1, -31), baseVelConstraint); // -31
 
         //park
         TrajectoryActionBuilder parkTraj = specimen5TrajHang.endTrajectory().fresh()
@@ -249,8 +285,24 @@ public class SplineAuto extends LinearOpMode {
 
         if (isStopRequested()) return; //exit when stop is pressed
 
-        //Sequential Actions + Parallel
+        SequentialAction scanSamples = new SequentialAction(
+                new ParallelAction(
+                        spec0Traj.build(),
+                        bac.hangSpecimen(),
+                        bac.hoverArm()
+                ),
+                new SequentialAction(
+                        bac.resetRailArm(),
+                        /* robot adjusts position backwards, left, or right so that
+                        camera is positioned on top of nearest sample to camera */
+                        bac.closeSamClaw(),
+                        bac.raiseArm(),
+                        depositSample.build(),
+                        bac.openSamClaw()
+                )
+        );
 
+        //Sequential Actions + Parallel
         /* push samples (3 samples)
             1. reset rail and swing arm back
             2. do the driving path */
@@ -263,14 +315,6 @@ public class SplineAuto extends LinearOpMode {
         /* Clip Specimen #1 (pre-wall specimen) (repeat 1-5)
             1. close claw (claw should already be opened)
             2. go to hang specimen then come back */
-      /*  SequentialAction w = new SequentialAction(
-                bac.resetRailArm(),
-                bac.closeSpecimenClaw()
-        );*/
-        SequentialAction w = new SequentialAction(
-                bac.rrTest()
-        );
-
 
         SequentialAction hangSpecimen1 = new SequentialAction(
                 bac.closeSpecimenClaw(),
@@ -278,11 +322,9 @@ public class SplineAuto extends LinearOpMode {
                         specimen1Traj.build(),
                         bac.hangSpecimen()
                 )
-
         );
 
         SequentialAction hangSpecimen2 = new SequentialAction(
-
                 new ParallelAction(
                         specimen2TrajBack.build(),
                         bac.resetRailArm(),
@@ -291,7 +333,6 @@ public class SplineAuto extends LinearOpMode {
                 new SequentialAction(
                         bac.sleep(100),
                         bac.closeSpecimenClaw()
-
                 ),
                 new ParallelAction(
                         specimen2TrajHang.build(),
@@ -301,7 +342,6 @@ public class SplineAuto extends LinearOpMode {
         );
 
         SequentialAction hangSpecimen3 = new SequentialAction(
-
                 new ParallelAction(
                         specimen3TrajBack.build(),
                         bac.resetRailArm(),
@@ -310,7 +350,6 @@ public class SplineAuto extends LinearOpMode {
                 new SequentialAction(
                         bac.sleep(100),
                         bac.closeSpecimenClaw()
-
                 ),
                 new ParallelAction(
                         specimen3TrajHang.build(),
@@ -320,7 +359,6 @@ public class SplineAuto extends LinearOpMode {
         );
 
         SequentialAction hangSpecimen4 = new SequentialAction(
-
                 new ParallelAction(
                         specimen4TrajBack.build(),
                         bac.resetRailArm(),
@@ -329,7 +367,6 @@ public class SplineAuto extends LinearOpMode {
                 new SequentialAction(
                         bac.sleep(100),
                         bac.closeSpecimenClaw()
-
                 ),
                 new ParallelAction(
                         specimen4TrajHang.build(),
@@ -337,8 +374,8 @@ public class SplineAuto extends LinearOpMode {
                 ),
                 bac.openClaw()
         );
-        SequentialAction hangSpecimen5 = new SequentialAction(
 
+        SequentialAction hangSpecimen5 = new SequentialAction(
                 new ParallelAction(
                         specimen5TrajBack.build(),
                         bac.resetRailArm(),
@@ -347,7 +384,6 @@ public class SplineAuto extends LinearOpMode {
                 new SequentialAction(
                         bac.sleep(100),
                         bac.closeSpecimenClaw()
-
                 ),
                 new ParallelAction(
                         specimen5TrajHang.build(),
@@ -362,12 +398,12 @@ public class SplineAuto extends LinearOpMode {
                         bac.resetRailArm(),
                         parkTraj.build()
                 )
-
         );
 
         //run actions
         Actions.runBlocking(
                 new SequentialAction(
+                        scanSamples,
                         pushSamples,
                         hangSpecimen1,
                         hangSpecimen2,
