@@ -194,7 +194,7 @@ public class FinalAuto extends LinearOpMode {
         TrajectoryActionBuilder pushSamplesTraj = drive.actionBuilder(initialPose)
                 .strafeToConstantHeading(new Vector2d(48, -10))
                 .strafeToConstantHeading(new Vector2d(48,-46))
-                .strafeToConstantHeading(new Vector2d(48, -10))
+                .strafeToConstantHeading(new Vector2d(48, -13))
                 .strafeToConstantHeading(new Vector2d(56,-13))
                 .strafeToConstantHeading(new Vector2d(56,-46))
                 .strafeToConstantHeading(new Vector2d(56, -13))

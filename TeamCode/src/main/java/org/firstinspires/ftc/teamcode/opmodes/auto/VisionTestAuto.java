@@ -33,8 +33,12 @@ import org.firstinspires.ftc.teamcode.vision.BlueAlignment;
 @Autonomous(name = "Test Auto", group = "Autonomous")
 public class VisionTestAuto extends LinearOpMode {
     public class BridgeArmClaw {
-        private Servo bridge, sampleClaw, specimenArm, specimenClaw, rail;
-        private ElapsedTime timer = new ElapsedTime();
+        private final Servo bridge;
+        private final Servo sampleClaw;
+        private final Servo specimenArm;
+        private final Servo specimenClaw;
+        private final Servo rail;
+        private final ElapsedTime timer = new ElapsedTime();
         public BridgeArmClaw (HardwareMap hardwareMap){
             bridge = hardwareMap.get(Servo.class, "bridge");
             sampleClaw = hardwareMap.get(Servo.class, "sampleClaw");
@@ -57,8 +61,7 @@ public class VisionTestAuto extends LinearOpMode {
                     timer.reset();
                 }
                 specimenClaw.setPosition(0.9);//0.8
-                if (timer.seconds() > 0.5) return false;
-                return true;
+                return !(timer.seconds() > 0.5);
             }
         } //CloseSpecimenClaw
 
@@ -147,9 +150,8 @@ public class VisionTestAuto extends LinearOpMode {
 
                 // Check if the sleep duration has passed
                 long elapsedTime = System.currentTimeMillis() - startTime;
-                if (elapsedTime >= sleepTimeMillis)
-                    return false; // Sleep is done
-                return true; // Sleep is still ongoing
+                return elapsedTime < sleepTimeMillis; // Sleep is done
+// Sleep is still ongoing
             }
         }
 
@@ -181,7 +183,7 @@ public class VisionTestAuto extends LinearOpMode {
 
         //Declare Actions
         public Action closeSpecimenClaw() { return new CloseSpecimenClaw(); }
-        public Action rrTest(){ return new ResetTest(); }
+        // public Action rrTest(){ return new ResetTest(); }
         public Action openClaw(){ return new openClaw(); }
         public Action openSamClaw() { return new openSamClaw(); }
         public Action closeSamClaw() { return new closeSamClaw(); }
@@ -231,12 +233,34 @@ public class VisionTestAuto extends LinearOpMode {
         MecanumDrive drive = new MecanumDrive(hardwareMap, initialPose); //initialize drive
         BridgeArmClaw bac = new BridgeArmClaw(hardwareMap); //initialize all servos
 
+        // VISION CENTERING
+        final double imageCenterX = 160;
+        final double imageCenterY = 120;
+        final double threshold = 20;
+        Pose2d currentVisionPose = new Pose2d(25,-62,Math.toRadians(90));
+        // Conversion factor from pixels to inches.
+        final double conversionFactor = 0.1;
+        boolean centered = false;
+        Point sampleCenter = blueAlignment.returnCenter();
+        double dx = sampleCenter.x - imageCenterX;
+        double dy = sampleCenter.y - imageCenterY;
+        // Only consider downward movement (ignore negative vertical error).
+        double adjustedDy = (dy > 0) ? dy : 0;
+        // Calculate full correction in inches.
+        double moveX = dx * conversionFactor;
+        double moveY = adjustedDy * conversionFactor;
+        Vector2d targetVector = new Vector2d(currentVisionPose.position.x + moveX, currentVisionPose.position.y + moveY);
+
+        // TRAJECTORIES
+        // HANG PRELOADED SPECIMEN
         TrajectoryActionBuilder spec0Traj = drive.actionBuilder(initialPose)
                 .strafeToConstantHeading(new Vector2d(-3,-31), baseVelConstraint);
-
+        // MOVE TO ALIGN NEW SAMPLE
+        TrajectoryActionBuilder alignSample = spec0Traj.endTrajectory().fresh()
+                .strafeToConstantHeading(targetVector);
+        // DEPOSIT NEW SAMPLE
         TrajectoryActionBuilder depositSample = spec0Traj.endTrajectory().fresh()
                 .splineToLinearHeading(new Pose2d(25, -62, Math.toRadians(0)), Math.toRadians(0));
-
         // PUSH SAMPLES
         TrajectoryActionBuilder pushSamplesTraj = depositSample.endTrajectory().fresh()
                 .splineToLinearHeading(new Pose2d(44, -10, Math.toRadians(90)), Math.toRadians(90))
@@ -247,7 +271,6 @@ public class VisionTestAuto extends LinearOpMode {
                 .splineToConstantHeading(new Vector2d(61, -13), Math.toRadians(0))
                 .strafeToConstantHeading(new Vector2d(61, -46))
                 .strafeToConstantHeading(new Vector2d(38, -59));
-        
         // HANG FIRST SPECIMEN
         TrajectoryActionBuilder specimen1Traj = pushSamplesTraj.endTrajectory().fresh()
                 .strafeToConstantHeading(new Vector2d(-3, -31), baseVelConstraint);
@@ -282,6 +305,8 @@ public class VisionTestAuto extends LinearOpMode {
         waitForStart(); //wait until start is pressed
         if (isStopRequested()) return; // exit when stop is pressed
 
+        // ACTIONS
+        // SCAN SAMPLES (SPEC 0)
         SequentialAction scanSamples = new SequentialAction(
                 new ParallelAction(
                         spec0Traj.build(),
@@ -290,29 +315,20 @@ public class VisionTestAuto extends LinearOpMode {
                 ),
                 new SequentialAction(
                         bac.resetRailArm(),
-                        /* robot adjusts position backwards, left, or right so that
-                        camera is positioned on top of nearest sample to camera */
+                        alignSample.build(),
                         bac.closeSamClaw(),
                         bac.raiseArm(),
                         depositSample.build(),
                         bac.openSamClaw()
                 )
         );
-
-        //Sequential Actions + Parallel
-        /* push samples (3 samples)
-            1. reset rail and swing arm back
-            2. do the driving path */
+        // PUSH SAMPLES
         SequentialAction pushSamples = new SequentialAction(
                 new ParallelAction(
                         pushSamplesTraj.build()
                 )
         );
-
-        /* Clip Specimen #1 (pre-wall specimen) (repeat 1-5)
-            1. close claw (claw should already be opened)
-            2. go to hang specimen then come back */
-
+        // HANG FIRST SPECIMEN
         SequentialAction hangSpecimen1 = new SequentialAction(
                 bac.closeSpecimenClaw(),
                 new ParallelAction(
@@ -320,7 +336,7 @@ public class VisionTestAuto extends LinearOpMode {
                         bac.hangSpecimen()
                 )
         );
-
+        // HANG SECOND SPECIMEN
         SequentialAction hangSpecimen2 = new SequentialAction(
                 new ParallelAction(
                         specimen2TrajBack.build(),
@@ -337,7 +353,7 @@ public class VisionTestAuto extends LinearOpMode {
                 ),
                 bac.openClaw()
         );
-
+        // HANG THIRD SPECIMEN
         SequentialAction hangSpecimen3 = new SequentialAction(
                 new ParallelAction(
                         specimen3TrajBack.build(),
@@ -354,7 +370,7 @@ public class VisionTestAuto extends LinearOpMode {
                 ),
                 bac.openClaw()
         );
-
+        // HANG FOURTH SPECIMEN
         SequentialAction hangSpecimen4 = new SequentialAction(
                 new ParallelAction(
                         specimen4TrajBack.build(),
@@ -371,7 +387,7 @@ public class VisionTestAuto extends LinearOpMode {
                 ),
                 bac.openClaw()
         );
-
+        // HANG FIFTH SPECIMEN
         SequentialAction hangSpecimen5 = new SequentialAction(
                 new ParallelAction(
                         specimen5TrajBack.build(),
@@ -388,16 +404,14 @@ public class VisionTestAuto extends LinearOpMode {
                 ),
                 bac.openClaw()
         );
-
-        // Park
+        // PARK
         SequentialAction park = new SequentialAction(
                 new ParallelAction(
                         bac.resetRailArm(),
                         parkTraj.build()
                 )
         );
-
-        //run actions
+        // RUN ACTIONS
         Actions.runBlocking(
                 new SequentialAction(
                         scanSamples,
@@ -412,6 +426,5 @@ public class VisionTestAuto extends LinearOpMode {
         );
 
         telemetry.update();
-
     }
 }

@@ -150,7 +150,7 @@ public class FinalTeleop extends OpMode {
             sampleTimer.reset();
         } else if (gamepad2.right_bumper && specimenTimer.milliseconds() > 250) { // open/closes specimen claw
             if (specimenIsOpen) {
-                specimenClaw.setPosition(1.0); //Rizzmond Strikes Again!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                specimenClaw.setPosition(1.0);
                 specimenIsOpen = false;
             } else {
                 specimenClaw.setPosition(0.0);
@@ -170,7 +170,8 @@ public class FinalTeleop extends OpMode {
         else if (gamepad2.y) bridge.setPosition(0.5); // raises sample arm
         else if (gamepad2.b) bridge.setPosition(0.92); // "hover" mode
         else if (gamepad2.x) bridge.setPosition(0.85); // "backout" mode
-        else if (gamepad2.dpad_left) bridge.setPosition(0.6); // back up specimen score
+        else if (gamepad2.dpad_left) bridge.setPosition(0.7); // back up specimen score
     }
+
 }
 
