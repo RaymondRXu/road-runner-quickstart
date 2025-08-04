@@ -9,7 +9,7 @@ import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.opencv.core.Point;
 
-@TeleOp(name = "Test Alignment Pipeline - Blue", group = "Vision")
+@TeleOp(name = "PLEASE DO NOT USE ME", group = "Vision")
 public class TestAlignmentBlueOpMode extends LinearOpMode {
     private OpenCvCamera webcam;
     private BlueAlignment blueAlignment;

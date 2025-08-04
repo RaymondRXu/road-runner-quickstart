@@ -21,7 +21,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.roadrunner.MecanumDrive;
 
-@Autonomous(name = "Chesapeake Auto", group = "Autonomous")
+@Autonomous(name = "Worlds Auto", group = "Autonomous")
 public class FinalAuto extends LinearOpMode {
     public class BridgeArmClaw {
         private Servo bridge, sampleClaw, specimenArm, specimenClaw, rail;
@@ -64,7 +64,7 @@ public class FinalAuto extends LinearOpMode {
                 if (!isReset) {
                     timer.reset();
                     specimenArm.setPosition(0);//set to reset value (back)
-                    rail.setPosition(0.5); //set to reset value (down)
+                    rail.setPosition(0.1); //set to reset value (down)
 
                     isReset = true;
                 }
@@ -92,6 +92,14 @@ public class FinalAuto extends LinearOpMode {
             @Override
             public boolean run(@NonNull TelemetryPacket telemetryPacket) {
                 specimenClaw.setPosition(0);
+                return false;
+            }
+        }
+
+        public class hoverRail implements Action {
+            @Override
+            public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+                rail.setPosition(0.53);
                 return false;
             }
         }
@@ -131,7 +139,7 @@ public class FinalAuto extends LinearOpMode {
                 }
                 /*rail should go up, swing specimenArm to position
                 rail => 0.5; sA => 0*/
-                rail.setPosition(0.57); //0.61
+                rail.setPosition(0.50); //0.61
                 specimenArm.setPosition(1);
                 telemetry.addData("rail", rail.getPosition());
                 //change these positions if needed
@@ -170,7 +178,7 @@ public class FinalAuto extends LinearOpMode {
         public Action resetRailArm(){
             return new ResetRailArm();
         }
-
+        public Action hoverRail() { return new hoverRail();}
 
     }//BridgeArmClaw
 
@@ -192,49 +200,49 @@ public class FinalAuto extends LinearOpMode {
 
         //Trajectories
         TrajectoryActionBuilder pushSamplesTraj = drive.actionBuilder(initialPose)
-                .strafeToConstantHeading(new Vector2d(48, -10))
-                .strafeToConstantHeading(new Vector2d(48,-46))
-                .strafeToConstantHeading(new Vector2d(48, -13))
-                .strafeToConstantHeading(new Vector2d(56,-13))
-                .strafeToConstantHeading(new Vector2d(56,-46))
-                .strafeToConstantHeading(new Vector2d(56, -13))
+                .strafeToConstantHeading(new Vector2d(47, -10))
+                .strafeToConstantHeading(new Vector2d(47,-46))
+                .strafeToConstantHeading(new Vector2d(46, -13))
+                .strafeToConstantHeading(new Vector2d(54,-13))
+                .strafeToConstantHeading(new Vector2d(54,-46))
+                .strafeToConstantHeading(new Vector2d(54, -13))
                 .strafeToConstantHeading(new Vector2d(61, -13))
                 .strafeToConstantHeading(new Vector2d(61, -46))
-                .strafeToConstantHeading(new Vector2d(38, -59));
+                .strafeToConstantHeading(new Vector2d(36, -60)); //-59
         //step 1
         TrajectoryActionBuilder specimen1Traj = pushSamplesTraj.endTrajectory().fresh()
-                .strafeToConstantHeading(new Vector2d(-3, -31), baseVelConstraint); // -40
+                .strafeToConstantHeading(new Vector2d(-3, -30), baseVelConstraint); // -40
         //step 2
         TrajectoryActionBuilder specimen2TrajBack = specimen1Traj.endTrajectory().fresh()
-                .strafeToConstantHeading(new Vector2d(38, -59), baseVelConstraint);
+                .strafeToConstantHeading(new Vector2d(34, -59), baseVelConstraint);
 
         TrajectoryActionBuilder specimen2TrajHang = specimen2TrajBack.endTrajectory().fresh()
-                .strafeToConstantHeading(new Vector2d(-2.5, -31), baseVelConstraint); // -38
+                .strafeToConstantHeading(new Vector2d(-3, -30), baseVelConstraint); // -38
 
         //step 3
         TrajectoryActionBuilder specimen3TrajBack = specimen2TrajHang.endTrajectory().fresh()
-                .strafeToConstantHeading(new Vector2d(38, -59), baseVelConstraint);
+                .strafeToConstantHeading(new Vector2d(34, -59), baseVelConstraint);
 
         TrajectoryActionBuilder specimen3TrajHang = specimen3TrajBack.endTrajectory().fresh()
-                .strafeToConstantHeading(new Vector2d(-2, -31), baseVelConstraint); // -35
+                .strafeToConstantHeading(new Vector2d(-3, -30), baseVelConstraint); // -35
 
         //step 4
         TrajectoryActionBuilder specimen4TrajBack = specimen3TrajHang.endTrajectory().fresh()
-                .strafeToConstantHeading(new Vector2d(38, -59), baseVelConstraint);
+                .strafeToConstantHeading(new Vector2d(34, -59), baseVelConstraint);
 
         TrajectoryActionBuilder specimen4TrajHang = specimen4TrajBack.endTrajectory().fresh()
-                .strafeToConstantHeading(new Vector2d(-1.5, -31), baseVelConstraint); // -33
+                .strafeToConstantHeading(new Vector2d(-2.5, -30), baseVelConstraint); // -33
 
         //step 5
         TrajectoryActionBuilder specimen5TrajBack = specimen4TrajHang.endTrajectory().fresh()
-                .strafeToConstantHeading(new Vector2d(38, -59), baseVelConstraint);
+                .strafeToConstantHeading(new Vector2d(34, -59), baseVelConstraint);
 
         TrajectoryActionBuilder specimen5TrajHang = specimen5TrajBack.endTrajectory().fresh()
-                .strafeToConstantHeading(new Vector2d(-1, -31), baseVelConstraint); // -31
+                .strafeToConstantHeading(new Vector2d(-2.5, -30), baseVelConstraint); // -31
 
         //park
         TrajectoryActionBuilder parkTraj = specimen5TrajHang.endTrajectory().fresh()
-                .strafeToConstantHeading(new Vector2d(38, -59), baseVelConstraint);
+                .strafeToConstantHeading(new Vector2d(33, -59), baseVelConstraint);
 
         waitForStart();//wait until start is pressed
 
@@ -257,6 +265,8 @@ public class FinalAuto extends LinearOpMode {
 
         SequentialAction hangSpecimen1 = new SequentialAction(
                 bac.closeSpecimenClaw(),
+                bac.hoverRail(),
+                bac.sleep(100),
                 new ParallelAction(
                         specimen1Traj.build(),
                         bac.hangSpecimen()
@@ -274,7 +284,8 @@ public class FinalAuto extends LinearOpMode {
                 new SequentialAction(
                         bac.sleep(100),
                         bac.closeSpecimenClaw()
-
+                        /* bac.hoverRail(),
+                        bac.sleep(50) */
                 ),
                 new ParallelAction(
                         specimen2TrajHang.build(),
@@ -293,7 +304,8 @@ public class FinalAuto extends LinearOpMode {
                 new SequentialAction(
                         bac.sleep(100),
                         bac.closeSpecimenClaw()
-
+                        /* bac.hoverRail(),
+                        bac.sleep(50)*/
                 ),
                 new ParallelAction(
                         specimen3TrajHang.build(),
@@ -312,7 +324,8 @@ public class FinalAuto extends LinearOpMode {
                 new SequentialAction(
                         bac.sleep(100),
                         bac.closeSpecimenClaw()
-
+                        /*bac.hoverRail(),
+                        bac.sleep(50)*/
                 ),
                 new ParallelAction(
                         specimen4TrajHang.build(),
@@ -330,7 +343,8 @@ public class FinalAuto extends LinearOpMode {
                 new SequentialAction(
                         bac.sleep(100),
                         bac.closeSpecimenClaw()
-
+                        /* bac.hoverRail(),
+                        bac.sleep(50) */
                 ),
                 new ParallelAction(
                         specimen5TrajHang.build(),

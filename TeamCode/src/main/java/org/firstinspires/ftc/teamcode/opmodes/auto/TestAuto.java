@@ -64,7 +64,8 @@ public class TestAuto extends LinearOpMode {
                 if (!isReset) {
                     timer.reset();
                     specimenArm.setPosition(0);//set to reset value (back)
-                    rail.setPosition(0.5); //set to reset value (down)
+                    rail.setPosition(0.1); //set to reset value (down)
+
                     isReset = true;
                 }
 
@@ -73,6 +74,7 @@ public class TestAuto extends LinearOpMode {
                     isReset = false;
                     return false;//exit after reset
                 }
+
                 return true;
             }
         }//ResetRailArm
@@ -94,39 +96,13 @@ public class TestAuto extends LinearOpMode {
             }
         }
 
-        public class openSamClaw implements Action {
+        public class hoverRail implements Action {
             @Override
             public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-                sampleClaw.setPosition(0);
+                rail.setPosition(0.53);
                 return false;
             }
         }
-
-        public class closeSamClaw implements Action {
-            @Override
-            public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-                bridge.setPosition(0.96);
-                sampleClaw.setPosition(0.8);
-                return true;
-            }
-        }
-
-        public class hoverArm implements Action {
-            @Override
-            public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-                bridge.setPosition(0.85);
-                return true;
-            }
-        }
-
-        public class raiseArm implements Action {
-            @Override
-            public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-                bridge.setPosition(0.5);
-                return true;
-            }
-        }
-
 
         public class SleepAction implements Action {
             private final long sleepTimeMillis; // Duration to sleep in milliseconds
@@ -163,7 +139,7 @@ public class TestAuto extends LinearOpMode {
                 }
                 /*rail should go up, swing specimenArm to position
                 rail => 0.5; sA => 0*/
-                rail.setPosition(0.57); //0.61
+                rail.setPosition(0.50); //0.61
                 specimenArm.setPosition(1);
                 telemetry.addData("rail", rail.getPosition());
                 //change these positions if needed
@@ -191,10 +167,6 @@ public class TestAuto extends LinearOpMode {
             return new openClaw();
         }
 
-        public Action openSamClaw() { return new openSamClaw(); }
-
-        public Action closeSamClaw() { return new closeSamClaw(); }
-
         public Action sleep(int a) {
             return new SleepAction(a);
         }
@@ -203,14 +175,10 @@ public class TestAuto extends LinearOpMode {
             return new HangSpecimen();
         }
 
-        public Action hoverArm() { return new hoverArm(); }
-
-        public Action raiseArm() { return new raiseArm(); }
-
         public Action resetRailArm(){
             return new ResetRailArm();
         }
-
+        public Action hoverRail() { return new hoverRail();}
 
     }//BridgeArmClaw
 
@@ -228,81 +196,60 @@ public class TestAuto extends LinearOpMode {
         Pose2d initialPose = new Pose2d(25, -62, Math.toRadians(90));
 
         MecanumDrive drive = new MecanumDrive(hardwareMap, initialPose); //initialize drive
-        BridgeArmClaw bac = new BridgeArmClaw(hardwareMap); //initialize all servos
-
-        TrajectoryActionBuilder spec0Traj = drive.actionBuilder(initialPose)
-                 .strafeToConstantHeading(new Vector2d(-3,-31), baseVelConstraint);
-
-        TrajectoryActionBuilder depositSample = spec0Traj.endTrajectory().fresh()
-                .splineToLinearHeading(new Pose2d(25, -62, Math.toRadians(0)), Math.toRadians(0));
+        BridgeArmClaw bac = new BridgeArmClaw(hardwareMap);//initial all servos
 
         //Trajectories
-        TrajectoryActionBuilder pushSamplesTraj = depositSample.endTrajectory().fresh()
-                .splineToLinearHeading(new Pose2d(44, -10, Math.toRadians(90)), Math.toRadians(90))
-                .strafeToConstantHeading(new Vector2d(48, -10))
-                .strafeToConstantHeading(new Vector2d(48,-46))
-                .splineToConstantHeading(new Vector2d(56,-13), Math.toRadians(0))
-                .strafeToConstantHeading(new Vector2d(56,-46))
-                .splineToConstantHeading(new Vector2d(61, -13), Math.toRadians(0))
+        TrajectoryActionBuilder pushSamplesTraj = drive.actionBuilder(initialPose)
+                .strafeToConstantHeading(new Vector2d(47, -10))
+                .strafeToConstantHeading(new Vector2d(47,-46))
+                .strafeToConstantHeading(new Vector2d(46, -13))
+                .strafeToConstantHeading(new Vector2d(54,-13))
+                .strafeToConstantHeading(new Vector2d(54,-46))
+                .strafeToConstantHeading(new Vector2d(54, -13))
+                .strafeToConstantHeading(new Vector2d(61, -13))
                 .strafeToConstantHeading(new Vector2d(61, -46))
-                .strafeToConstantHeading(new Vector2d(38, -59));
+                .strafeToConstantHeading(new Vector2d(36, -60)); //-59
         //step 1
         TrajectoryActionBuilder specimen1Traj = pushSamplesTraj.endTrajectory().fresh()
-                .strafeToConstantHeading(new Vector2d(-3, -31), baseVelConstraint); // -40
+                .strafeToConstantHeading(new Vector2d(-3, -30), baseVelConstraint); // -40
         //step 2
         TrajectoryActionBuilder specimen2TrajBack = specimen1Traj.endTrajectory().fresh()
-                .strafeToConstantHeading(new Vector2d(38, -59), baseVelConstraint);
+                .strafeToConstantHeading(new Vector2d(34, -59), baseVelConstraint);
 
         TrajectoryActionBuilder specimen2TrajHang = specimen2TrajBack.endTrajectory().fresh()
-                .strafeToConstantHeading(new Vector2d(-2.5, -31), baseVelConstraint); // -38
+                .strafeToConstantHeading(new Vector2d(-3, -30), baseVelConstraint); // -38
 
         //step 3
         TrajectoryActionBuilder specimen3TrajBack = specimen2TrajHang.endTrajectory().fresh()
-                .strafeToConstantHeading(new Vector2d(38, -59), baseVelConstraint);
+                .strafeToConstantHeading(new Vector2d(34, -59), baseVelConstraint);
 
         TrajectoryActionBuilder specimen3TrajHang = specimen3TrajBack.endTrajectory().fresh()
-                .strafeToConstantHeading(new Vector2d(-2, -31), baseVelConstraint); // -35
+                .strafeToConstantHeading(new Vector2d(-3, -30), baseVelConstraint); // -35
 
         //step 4
         TrajectoryActionBuilder specimen4TrajBack = specimen3TrajHang.endTrajectory().fresh()
-                .strafeToConstantHeading(new Vector2d(38, -59), baseVelConstraint);
+                .strafeToConstantHeading(new Vector2d(34, -59), baseVelConstraint);
 
         TrajectoryActionBuilder specimen4TrajHang = specimen4TrajBack.endTrajectory().fresh()
-                .strafeToConstantHeading(new Vector2d(-1.5, -31), baseVelConstraint); // -33
+                .strafeToConstantHeading(new Vector2d(-2.5, -30), baseVelConstraint); // -33
 
         //step 5
         TrajectoryActionBuilder specimen5TrajBack = specimen4TrajHang.endTrajectory().fresh()
-                .strafeToConstantHeading(new Vector2d(38, -59), baseVelConstraint);
+                .strafeToConstantHeading(new Vector2d(34, -59), baseVelConstraint);
 
         TrajectoryActionBuilder specimen5TrajHang = specimen5TrajBack.endTrajectory().fresh()
-                .strafeToConstantHeading(new Vector2d(-1, -31), baseVelConstraint); // -31
+                .strafeToConstantHeading(new Vector2d(-2.5, -30), baseVelConstraint); // -31
 
         //park
         TrajectoryActionBuilder parkTraj = specimen5TrajHang.endTrajectory().fresh()
-                .strafeToConstantHeading(new Vector2d(38, -59), baseVelConstraint);
+                .strafeToConstantHeading(new Vector2d(33, -59), baseVelConstraint);
 
         waitForStart();//wait until start is pressed
 
         if (isStopRequested()) return; //exit when stop is pressed
 
-        SequentialAction scanSamples = new SequentialAction(
-                new ParallelAction(
-                        spec0Traj.build(),
-                        bac.hangSpecimen(),
-                        bac.hoverArm()
-                ),
-                new SequentialAction(
-                        bac.resetRailArm(),
-                        /* robot adjusts position backwards, left, or right so that
-                        camera is positioned on top of nearest sample to camera */
-                        bac.closeSamClaw(),
-                        bac.raiseArm(),
-                        depositSample.build(),
-                        bac.openSamClaw()
-                )
-        );
-
         //Sequential Actions + Parallel
+
         /* push samples (3 samples)
             1. reset rail and swing arm back
             2. do the driving path */
@@ -318,13 +265,17 @@ public class TestAuto extends LinearOpMode {
 
         SequentialAction hangSpecimen1 = new SequentialAction(
                 bac.closeSpecimenClaw(),
+                bac.hoverRail(),
+                bac.sleep(100),
                 new ParallelAction(
                         specimen1Traj.build(),
                         bac.hangSpecimen()
                 )
+
         );
 
         SequentialAction hangSpecimen2 = new SequentialAction(
+
                 new ParallelAction(
                         specimen2TrajBack.build(),
                         bac.resetRailArm(),
@@ -333,6 +284,8 @@ public class TestAuto extends LinearOpMode {
                 new SequentialAction(
                         bac.sleep(100),
                         bac.closeSpecimenClaw()
+                        /* bac.hoverRail(),
+                        bac.sleep(50) */
                 ),
                 new ParallelAction(
                         specimen2TrajHang.build(),
@@ -342,6 +295,7 @@ public class TestAuto extends LinearOpMode {
         );
 
         SequentialAction hangSpecimen3 = new SequentialAction(
+
                 new ParallelAction(
                         specimen3TrajBack.build(),
                         bac.resetRailArm(),
@@ -350,6 +304,8 @@ public class TestAuto extends LinearOpMode {
                 new SequentialAction(
                         bac.sleep(100),
                         bac.closeSpecimenClaw()
+                        /* bac.hoverRail(),
+                        bac.sleep(50)*/
                 ),
                 new ParallelAction(
                         specimen3TrajHang.build(),
@@ -359,6 +315,7 @@ public class TestAuto extends LinearOpMode {
         );
 
         SequentialAction hangSpecimen4 = new SequentialAction(
+
                 new ParallelAction(
                         specimen4TrajBack.build(),
                         bac.resetRailArm(),
@@ -367,6 +324,8 @@ public class TestAuto extends LinearOpMode {
                 new SequentialAction(
                         bac.sleep(100),
                         bac.closeSpecimenClaw()
+                        /*bac.hoverRail(),
+                        bac.sleep(50)*/
                 ),
                 new ParallelAction(
                         specimen4TrajHang.build(),
@@ -374,8 +333,8 @@ public class TestAuto extends LinearOpMode {
                 ),
                 bac.openClaw()
         );
-
         SequentialAction hangSpecimen5 = new SequentialAction(
+
                 new ParallelAction(
                         specimen5TrajBack.build(),
                         bac.resetRailArm(),
@@ -384,6 +343,8 @@ public class TestAuto extends LinearOpMode {
                 new SequentialAction(
                         bac.sleep(100),
                         bac.closeSpecimenClaw()
+                        /* bac.hoverRail(),
+                        bac.sleep(50) */
                 ),
                 new ParallelAction(
                         specimen5TrajHang.build(),
@@ -398,12 +359,12 @@ public class TestAuto extends LinearOpMode {
                         bac.resetRailArm(),
                         parkTraj.build()
                 )
+
         );
 
         //run actions
         Actions.runBlocking(
                 new SequentialAction(
-                        scanSamples,
                         pushSamples,
                         hangSpecimen1,
                         hangSpecimen2,

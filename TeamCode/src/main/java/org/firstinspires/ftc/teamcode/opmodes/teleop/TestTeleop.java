@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@TeleOp (name="Test Teleop") public class TestTeleop extends OpMode {
+@TeleOp (name="DO NOT USE THIS TELEOP") public class TestTeleop extends OpMode {
     private DcMotor backLeft;
     private DcMotor backRight;
     private DcMotor frontLeft;private DcMotor frontRight;

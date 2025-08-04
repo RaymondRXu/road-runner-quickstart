@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@TeleOp (name="Chesapeake Teleop")
+@TeleOp (name="Worlds Teleop")
 public class FinalTeleop extends OpMode {
     private DcMotor backLeft;
     private DcMotor backRight;
@@ -31,7 +31,8 @@ public class FinalTeleop extends OpMode {
     public double samplePosition;
     public ElapsedTime specimenTimer;
     public ElapsedTime sampleTimer;
-    // public ElapsedTime ledTimer;
+    public ElapsedTime peckingTimer;
+    public boolean armDown;
 
     @Override
     public void init() {
@@ -75,9 +76,8 @@ public class FinalTeleop extends OpMode {
         samplePosition = 0.8;
         specimenTimer = new ElapsedTime();
         sampleTimer = new ElapsedTime();
-        //ledTimer = new ElapsedTime();
-        //ledTimer.reset();
-        //ledIndicator.setPosition(0.5);
+        peckingTimer = new ElapsedTime();
+        armDown = false;
     }
 
     @Override
@@ -108,14 +108,6 @@ public class FinalTeleop extends OpMode {
         backLeft.setPower(backLeftPower * DRIVE_POWER_VARIABLE);
         backRight.setPower(backRightPower * DRIVE_POWER_VARIABLE);
 
-        // led
-        /*if (ledTimer.milliseconds() < 60000)
-            ledIndicator.setPosition(0.5);
-        else if (ledTimer.milliseconds() < 90000)
-            ledIndicator.setPosition(0.388);
-        else
-            ledIndicator.setPosition(0.279);*/
-
         // Debug telemetry
         if (rail.getPosition() >= 0.45)
             telemetry.addData("Rail Position", "UP");
@@ -134,8 +126,7 @@ public class FinalTeleop extends OpMode {
         if (gamepad1.left_bumper) DRIVE_POWER_VARIABLE = 0.5; // slow driving
         else if (gamepad1.right_bumper) DRIVE_POWER_VARIABLE = 1; // revert to normal speed (fast)
         else if (gamepad1.b && sampleTimer.milliseconds() > 250) sampleClaw.setPosition(0); // opens sample claw
-        else if (gamepad1.y && sampleTimer.milliseconds() > 250
-        ) sampleClaw.setPosition(0.8); // closes sample claw
+        else if (gamepad1.y && sampleTimer.milliseconds() > 250) sampleClaw.setPosition(0.8); // closes sample claw
         else if (gamepad1.x) imu.resetYaw();
 
         // gamepad2 - intake systems (Kaichen)
@@ -158,20 +149,19 @@ public class FinalTeleop extends OpMode {
             }
             specimenTimer.reset();
         } else if (gamepad2.dpad_up) { // specimen arm goes up
-            this.rail.setPosition(0.61); //0.49
+            this.rail.setPosition(0.50); //0.49
             this.specimenArm.setPosition(0.83);
         } else if (gamepad2.dpad_right) { // specimen arm goes down
-            this.rail.setPosition(0.5); //0.42
+            this.rail.setPosition(0.1); //0.42
             this.specimenArm.setPosition(0.15);
         }
         else if (gamepad2.right_trigger > 0.1) rotation.setPosition(0.65); // horizontal sample claw
         else if (gamepad2.left_trigger > 0.1) rotation.setPosition(0.2); // vertical-ish sample claw
-        else if (gamepad2.a) bridge.setPosition(0.96); // drops sample arm all the way down
-        else if (gamepad2.y) bridge.setPosition(0.5); // raises sample arm
+        else if (gamepad2.a) bridge.setPosition(0.96);
+        else if (gamepad2.y) bridge.setPosition(0.50); // raises sample arm rizzmond lore rizzmond lore rizzmond lore
         else if (gamepad2.b) bridge.setPosition(0.92); // "hover" mode
         else if (gamepad2.x) bridge.setPosition(0.85); // "backout" mode
         else if (gamepad2.dpad_left) bridge.setPosition(0.7); // back up specimen score
     }
-
 }
 

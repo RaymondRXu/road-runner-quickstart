@@ -30,7 +30,7 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.opencv.core.Point;
 import org.firstinspires.ftc.teamcode.vision.BlueAlignment;
 
-@Autonomous(name = "Test Auto", group = "Autonomous")
+@Autonomous(name = "DO NOT USE", group = "Autonomous")
 public class VisionTestAuto extends LinearOpMode {
     public class BridgeArmClaw {
         private final Servo bridge;
@@ -259,7 +259,7 @@ public class VisionTestAuto extends LinearOpMode {
         TrajectoryActionBuilder alignSample = spec0Traj.endTrajectory().fresh()
                 .strafeToConstantHeading(targetVector);
         // DEPOSIT NEW SAMPLE
-        TrajectoryActionBuilder depositSample = spec0Traj.endTrajectory().fresh()
+        TrajectoryActionBuilder depositSample = alignSample.endTrajectory().fresh()
                 .splineToLinearHeading(new Pose2d(25, -62, Math.toRadians(0)), Math.toRadians(0));
         // PUSH SAMPLES
         TrajectoryActionBuilder pushSamplesTraj = depositSample.endTrajectory().fresh()
